@@ -1,646 +1,538 @@
-import { useState, useEffect, useRef } from "react"
-
-const PDF_URL = "https://drive.google.com/file/d/1b6Aj38T65Lpz3OKL1EGRMbNRErkw9NJG/view?usp=drive_link"
-const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co"
-const SUPABASE_ANON_KEY = "YOUR_ANON_KEY"
-
-const serif = "Georgia, serif"
-const sans = "'Helvetica Neue', Helvetica, Arial, sans-serif"
-
-const C = {
-    bg1: "#F5F0E8",
-    bg2: "#EDE8DC",
-    dark: "#1E1C18",
-    black: "#1A1612",
-    green: "#2E7D32",
-    greenLt: "#4CAF50",
-    tan: "#C8BFA8",
-    grey: "#6B6660",
-    grey2: "#9B9390",
-    red: "#DC2626",
-}
-
-function useReveal(): [React.RefObject<HTMLDivElement>, boolean] {
-    const ref = useRef<HTMLDivElement>(null)
-    const [v, setV] = useState(false)
-    useEffect(() => {
-        const el = ref.current
-        if (!el) return
-        const obs = new IntersectionObserver(
-            ([e]) => {
-                if (e.isIntersecting) {
-                    setV(true)
-                    obs.disconnect()
-                }
-            },
-            { threshold: 0.1 }
-        )
-        obs.observe(el)
-        return () => obs.disconnect()
-    }, [])
-    return [ref, v]
-}
-
-function fade(v: boolean, delay = 0): React.CSSProperties {
-    return {
-        opacity: v ? 1 : 0,
-        transform: v ? "translateY(0)" : "translateY(22px)",
-        transition: `opacity 0.85s ease ${delay}s, transform 0.85s ease ${delay}s`,
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Match Code</title>
+  <meta name="description" content="The profile is the easy part. Went from 0 to 250+ matches. Same phone. Same face. One thing changed." />
+  <meta property="og:title" content="The Match Code" />
+  <meta property="og:description" content="The profile is the easy part." />
+  <meta property="og:url" content="https://thematchcode.in" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    :root {
+      --bg1:    #F5F0E8;
+      --bg2:    #EDE8DC;
+      --dark:   #1E1C18;
+      --black:  #1A1612;
+      --green:  #2E7D32;
+      --greenl: #4CAF50;
+      --tan:    #C8BFA8;
+      --grey:   #6B6660;
+      --grey2:  #9B9390;
+      --red:    #DC2626;
+      --serif:  Georgia, serif;
+      --sans:   'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
-}
-
-function EyeIcon() {
-    return (
-        <svg width="26" height="16" viewBox="0 0 52 32" fill="none">
-            <path
-                d="M2 16C2 16 12 2 26 2C40 2 50 16 50 16C50 16 40 30 26 30C12 30 2 16 2 16Z"
-                stroke={C.red}
-                strokeWidth="3"
-                fill="none"
-            />
-            <circle cx="26" cy="16" r="7" fill={C.red} />
-            <circle cx="26" cy="16" r="3" fill="white" />
-        </svg>
-    )
-}
-
-export default function MatchCode() {
-    const [email, setEmail] = useState("")
-    const [submitted, setSubmitted] = useState(false)
-    const [loading, setLoading] = useState(false)
-    const [err, setErr] = useState("")
-
-    const [r1, v1] = useReveal()
-    const [r2, v2] = useReveal()
-    const [r3, v3] = useReveal()
-    const [r4, v4] = useReveal()
-    const [r5, v5] = useReveal()
-
-    function scrollDown() {
-        const el = document.getElementById("mc-wait")
-        if (el) el.scrollIntoView({ behavior: "smooth" })
+ 
+    html { scroll-behavior: smooth; }
+    body { font-family: var(--sans); background: var(--bg1); overflow-x: hidden; }
+ 
+    /* ── NAV ── */
+    nav {
+      background: var(--bg1);
+      border-bottom: 1px solid rgba(0,0,0,0.07);
+      padding: 18px 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      width: 100%;
     }
-
-    function openPDF() {
-        window.open(PDF_URL, "_blank")
+    .nav-brand { display: flex; align-items: center; gap: 10px; }
+    .nav-brand span {
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 15px;
+      color: var(--black);
     }
-
-    async function submit() {
-        if (!email || !email.includes("@")) {
-            setErr("Enter a valid email.")
-            return
-        }
-        setLoading(true)
-        setErr("")
-        try {
-            const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    apikey: SUPABASE_ANON_KEY,
-                    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-                    Prefer: "return=minimal",
-                },
-                body: JSON.stringify({
-                    email,
-                    created_at: new Date().toISOString(),
-                }),
-            })
-            if (res.ok || res.status === 201) {
-                setSubmitted(true)
-            } else {
-                setErr("Something went wrong. Try again.")
-            }
-        } catch {
-            setErr("Something went wrong. Try again.")
-        }
-        setLoading(false)
+    .nav-btn {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--green);
+      background: transparent;
+      border: 1px solid var(--green);
+      border-radius: 3px;
+      padding: 8px 18px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
     }
-
-    return (
-        <div
-            style={{
-                margin: 0,
-                padding: 0,
-                overflowX: "hidden",
-                width: "100%",
-            }}
-        >
-            {/* NAV */}
-            <div
-                style={{
-                    background: C.bg1,
-                    borderBottom: "1px solid rgba(0,0,0,0.07)",
-                    padding: "18px 48px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    position: "sticky",
-                    top: 0,
-                    zIndex: 100,
-                    boxSizing: "border-box",
-                    width: "100%",
-                }}
-            >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                    <EyeIcon />
-                    <span
-                        style={{
-                            fontFamily: sans,
-                            fontWeight: 500,
-                            fontSize: 15,
-                            color: C.black,
-                        }}
-                    >
-                        The Match Code
-                    </span>
-                </div>
-                <button
-                    onClick={openPDF}
-                    style={{
-                        fontFamily: sans,
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: C.green,
-                        background: "transparent",
-                        border: `1px solid ${C.green}`,
-                        borderRadius: 3,
-                        padding: "8px 18px",
-                        cursor: "pointer",
-                    }}
-                >
-                    Free Playbook
-                </button>
-            </div>
-
-            {/* HERO */}
-            <div
-                style={{
-                    background: C.bg1,
-                    padding: "130px 40px 150px",
-                    textAlign: "center",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div ref={r1} style={{ maxWidth: 620, margin: "0 auto" }}>
-                    <p
-                        style={{
-                            ...fade(v1, 0),
-                            fontFamily: sans,
-                            fontSize: 11,
-                            fontWeight: 500,
-                            letterSpacing: "0.2em",
-                            textTransform: "uppercase",
-                            color: C.green,
-                            marginBottom: 28,
-                            marginTop: 0,
-                        }}
-                    >
-                        The Dating Profile Match Playbook
-                    </p>
-                    <h1
-                        style={{
-                            ...fade(v1, 0.1),
-                            fontFamily: serif,
-                            fontSize: 64,
-                            fontWeight: 700,
-                            lineHeight: 1.06,
-                            color: C.black,
-                            marginBottom: 24,
-                            marginTop: 0,
-                            letterSpacing: "-0.02em",
-                        }}
-                    >
-                        The profile is
-                        <br />
-                        the easy part.
-                    </h1>
-                    <p
-                        style={{
-                            ...fade(v1, 0.2),
-                            fontFamily: sans,
-                            fontSize: 17,
-                            fontStyle: "italic",
-                            color: C.grey,
-                            marginBottom: 48,
-                            marginTop: 0,
-                            lineHeight: 1.6,
-                        }}
-                    >
-                        Same guy. Same city. One week. Everything changed.
-                    </p>
-                    <div
-                        style={{
-                            ...fade(v1, 0.3),
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: 14,
-                        }}
-                    >
-                        <button
-                            onClick={openPDF}
-                            style={{
-                                background: C.green,
-                                color: "white",
-                                fontFamily: sans,
-                                fontSize: 15,
-                                fontWeight: 500,
-                                padding: "20px 52px",
-                                border: "none",
-                                borderRadius: 4,
-                                cursor: "pointer",
-                            }}
-                        >
-                            Get the Free Playbook
-                        </button>
-                        <p
-                            style={{
-                                fontFamily: sans,
-                                fontSize: 12,
-                                fontStyle: "italic",
-                                color: C.grey2,
-                                margin: 0,
-                            }}
-                        >
-                            No email needed. No catch. Just take it.
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* STATS */}
-            <div
-                style={{
-                    background: C.dark,
-                    padding: "100px 40px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    ref={r2}
-                    style={{
-                        maxWidth: 860,
-                        margin: "0 auto",
-                        display: "grid",
-                        gridTemplateColumns: "1fr 1fr 1fr",
-                    }}
-                >
-                    {[
-                        { num: "250+", label: "matches in one week" },
-                        { num: "7", label: "days to rebuild everything" },
-                        { num: "0→9", label: "on every metric that matters" },
-                    ].map((s, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                ...fade(v2, i * 0.12),
-                                textAlign: "center",
-                                padding: "0 32px",
-                                borderRight:
-                                    i < 2
-                                        ? "1px solid rgba(200,191,168,0.12)"
-                                        : "none",
-                            }}
-                        >
-                            <div
-                                style={{
-                                    fontFamily: serif,
-                                    fontSize: 88,
-                                    fontWeight: 700,
-                                    color: "white",
-                                    lineHeight: 1,
-                                    marginBottom: 16,
-                                    letterSpacing: "-0.02em",
-                                }}
-                            >
-                                {s.num}
-                            </div>
-                            <div
-                                style={{
-                                    fontFamily: sans,
-                                    fontSize: 10,
-                                    color: C.tan,
-                                    letterSpacing: "0.14em",
-                                    textTransform: "uppercase",
-                                }}
-                            >
-                                {s.label}
-                            </div>
-                        </div>
-                    ))}
-                </div>
-                <p
-                    style={{
-                        fontFamily: sans,
-                        textAlign: "center",
-                        marginTop: 64,
-                        fontStyle: "italic",
-                        color: C.tan,
-                        fontSize: 14,
-                        opacity: 0.8,
-                    }}
-                >
-                    Not luck. Not looks. Just one thing rebuilt.
-                </p>
-            </div>
-
-            {/* STORY */}
-            <div
-                style={{
-                    background: C.bg2,
-                    padding: "130px 40px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div ref={r3} style={{ maxWidth: 660, margin: "0 auto" }}>
-                    <h2
-                        style={{
-                            ...fade(v3, 0),
-                            fontFamily: serif,
-                            fontSize: 40,
-                            fontWeight: 400,
-                            fontStyle: "italic",
-                            color: C.dark,
-                            lineHeight: 1.25,
-                            marginBottom: 52,
-                            marginTop: 0,
-                        }}
-                    >
-                        Here is what actually happened.
-                    </h2>
-                    {[
-                        "She was from NIFT. Design student. The kind of girl who makes you realise you are invisible before she has even looked at you properly. I had zero dress sense, a crew cut, and genuinely no idea what I was doing. She was polite the whole evening and looked through me the entire time. Not mean. Just absent. Like I was not quite there.",
-                        "Drove home. Opened Hinge. Zero matches. Same screen I had left three days ago. That night something clicked. The problem was not who I was. It was who I looked like I was. Those are two completely different problems. One of them has a very fast fix.",
-                        "Seven days later — 250+ matches. Same face. Same city. Same phone. The profile got them to stop scrolling. What happened after that is a different story. This playbook is the part that gets you there.",
-                    ].map((p, i) => (
-                        <p
-                            key={i}
-                            style={{
-                                ...fade(v3, i * 0.15),
-                                fontFamily: sans,
-                                fontSize: 17,
-                                lineHeight: 1.9,
-                                color: C.black,
-                                fontWeight: 300,
-                                marginTop: 0,
-                                marginBottom: i < 2 ? 32 : 0,
-                            }}
-                        >
-                            {p}
-                        </p>
-                    ))}
-                </div>
-            </div>
-
-            {/* DARK QUOTE */}
-            <div
-                style={{
-                    background: C.dark,
-                    padding: "100px 40px 110px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div ref={r4} style={{ maxWidth: 780, margin: "0 auto" }}>
-                    <blockquote
-                        style={{
-                            ...fade(v4, 0),
-                            fontFamily: serif,
-                            fontSize: 44,
-                            fontWeight: 400,
-                            lineHeight: 1.35,
-                            color: "white",
-                            margin: "0 0 28px 0",
-                            letterSpacing: "-0.01em",
-                        }}
-                    >
-                        "She was from NIFT. I did not stand a chance. Then one
-                        thing shifted."
-                    </blockquote>
-                    <p
-                        style={{
-                            ...fade(v4, 0.1),
-                            fontFamily: sans,
-                            fontStyle: "italic",
-                            color: C.tan,
-                            fontSize: 14,
-                            marginBottom: 16,
-                            marginTop: 0,
-                            opacity: 0.85,
-                        }}
-                    >
-                        This is only the beginning of the story.
-                    </p>
-                    <a
-                        href="https://instagram.com/thematchcode"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                            ...fade(v4, 0.2),
-                            fontFamily: sans,
-                            color: C.greenLt,
-                            fontSize: 15,
-                            fontWeight: 500,
-                            textDecoration: "none",
-                            display: "inline-block",
-                        }}
-                    >
-                        Follow the story on Instagram →
-                    </a>
-                </div>
-            </div>
-
-            {/* WAITLIST */}
-            <div
-                id="mc-wait"
-                style={{
-                    background: C.bg1,
-                    padding: "130px 40px",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <div
-                    ref={r5}
-                    style={{
-                        maxWidth: 520,
-                        margin: "0 auto",
-                        textAlign: "center",
-                    }}
-                >
-                    <p
-                        style={{
-                            ...fade(v5, 0),
-                            fontFamily: sans,
-                            fontSize: 10,
-                            letterSpacing: "0.2em",
-                            textTransform: "uppercase",
-                            color: C.tan,
-                            marginBottom: 20,
-                            marginTop: 0,
-                        }}
-                    >
-                        The free playbook is just the start
-                    </p>
-                    <h2
-                        style={{
-                            ...fade(v5, 0.1),
-                            fontFamily: serif,
-                            fontSize: 52,
-                            fontWeight: 600,
-                            lineHeight: 1.12,
-                            color: C.black,
-                            marginBottom: 16,
-                            marginTop: 0,
-                            letterSpacing: "-0.02em",
-                        }}
-                    >
-                        Something bigger
-                        <br />
-                        is coming.
-                    </h2>
-                    <p
-                        style={{
-                            ...fade(v5, 0.2),
-                            fontFamily: sans,
-                            fontSize: 16,
-                            color: C.grey,
-                            marginBottom: 44,
-                            marginTop: 0,
-                            fontStyle: "italic",
-                        }}
-                    >
-                        Be the first to know.
-                    </p>
-
-                    {submitted ? (
-                        <div
-                            style={{
-                                padding: "20px 28px",
-                                background: "rgba(46,125,50,0.08)",
-                                border: "1px solid rgba(46,125,50,0.2)",
-                                borderRadius: 4,
-                                fontFamily: sans,
-                                color: C.green,
-                                fontSize: 15,
-                                lineHeight: 1.6,
-                            }}
-                        >
-                            You are on the list.
-                            <br />
-                            <span style={{ fontSize: 13, opacity: 0.75 }}>
-                                We will reach out before anyone else.
-                            </span>
-                        </div>
-                    ) : (
-                        <div style={{ ...fade(v5, 0.3) }}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 8,
-                                    marginBottom: 12,
-                                }}
-                            >
-                                <input
-                                    type="email"
-                                    placeholder="your@email.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    onKeyDown={(e) =>
-                                        e.key === "Enter" && submit()
-                                    }
-                                    style={{
-                                        flex: 1,
-                                        padding: "17px 20px",
-                                        background: "white",
-                                        border: "1px solid #D1C9BD",
-                                        borderRadius: 4,
-                                        fontFamily: sans,
-                                        fontSize: 15,
-                                        color: C.black,
-                                        outline: "none",
-                                        minWidth: 0,
-                                    }}
-                                />
-                                <button
-                                    onClick={submit}
-                                    disabled={loading}
-                                    style={{
-                                        padding: "17px 28px",
-                                        background: loading
-                                            ? "#558B57"
-                                            : C.green,
-                                        color: "white",
-                                        border: "none",
-                                        borderRadius: 4,
-                                        fontFamily: sans,
-                                        fontSize: 14,
-                                        fontWeight: 500,
-                                        cursor: loading
-                                            ? "not-allowed"
-                                            : "pointer",
-                                        whiteSpace: "nowrap",
-                                    }}
-                                >
-                                    {loading ? "..." : "Notify Me"}
-                                </button>
-                            </div>
-                            {err && (
-                                <p
-                                    style={{
-                                        fontFamily: sans,
-                                        fontSize: 12,
-                                        color: C.red,
-                                        marginBottom: 8,
-                                        marginTop: 0,
-                                    }}
-                                >
-                                    {err}
-                                </p>
-                            )}
-                            <p
-                                style={{
-                                    fontFamily: sans,
-                                    fontSize: 12,
-                                    fontStyle: "italic",
-                                    color: C.grey2,
-                                    margin: 0,
-                                }}
-                            >
-                                No spam. Ever.
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* FOOTER */}
-            <div
-                style={{
-                    background: C.bg1,
-                    borderTop: "1px solid rgba(0,0,0,0.06)",
-                    padding: "32px 40px",
-                    textAlign: "center",
-                    width: "100%",
-                    boxSizing: "border-box",
-                }}
-            >
-                <p
-                    style={{
-                        fontFamily: sans,
-                        fontSize: 12,
-                        color: C.grey2,
-                        margin: 0,
-                        letterSpacing: "0.04em",
-                    }}
-                >
-                    © The Match Code
-                </p>
-            </div>
+    .nav-btn:hover { background: var(--green); color: white; }
+ 
+    /* ── SECTIONS ── */
+    .hero {
+      background: var(--bg1);
+      padding: 130px 40px 150px;
+      text-align: center;
+    }
+    .hero-inner { max-width: 620px; margin: 0 auto; }
+ 
+    .label {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 28px;
+      display: block;
+    }
+ 
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(42px, 6vw, 64px);
+      font-weight: 700;
+      line-height: 1.06;
+      color: var(--black);
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+    }
+ 
+    .subtext {
+      font-family: var(--sans);
+      font-size: 17px;
+      font-style: italic;
+      color: var(--grey);
+      margin-bottom: 48px;
+      line-height: 1.6;
+    }
+ 
+    .cta-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+ 
+    .btn-main {
+      background: var(--green);
+      color: white;
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 500;
+      padding: 20px 52px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+    .btn-main:hover { background: #245F27; }
+ 
+    .no-catch {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-style: italic;
+      color: var(--grey2);
+    }
+ 
+    /* ── STATS ── */
+    .stats {
+      background: var(--dark);
+      padding: 100px 40px;
+    }
+    .stats-grid {
+      max-width: 860px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+    .stat {
+      text-align: center;
+      padding: 0 32px;
+    }
+    .stat:not(:last-child) { border-right: 1px solid rgba(200,191,168,0.12); }
+    .stat-num {
+      font-family: var(--serif);
+      font-size: clamp(56px, 8vw, 88px);
+      font-weight: 700;
+      color: white;
+      line-height: 1;
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    .stat-label {
+      font-family: var(--sans);
+      font-size: 10px;
+      color: var(--tan);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+    .stats-note {
+      font-family: var(--sans);
+      text-align: center;
+      margin-top: 64px;
+      font-style: italic;
+      color: var(--tan);
+      font-size: 14px;
+      opacity: 0.8;
+    }
+ 
+    /* ── STORY ── */
+    .story {
+      background: var(--bg2);
+      padding: 130px 40px;
+    }
+    .story-inner { max-width: 660px; margin: 0 auto; }
+    .story-heading {
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 400;
+      font-style: italic;
+      color: var(--dark);
+      line-height: 1.25;
+      margin-bottom: 52px;
+    }
+    .story p {
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.9;
+      color: var(--black);
+      font-weight: 300;
+      margin-bottom: 32px;
+    }
+    .story p:last-child { margin-bottom: 0; }
+ 
+    /* ── DARK QUOTE ── */
+    .quote-sec {
+      background: var(--dark);
+      padding: 100px 40px 110px;
+    }
+    .quote-inner { max-width: 780px; margin: 0 auto; }
+    blockquote {
+      font-family: var(--serif);
+      font-size: clamp(28px, 4vw, 44px);
+      font-weight: 400;
+      line-height: 1.35;
+      color: white;
+      margin: 0 0 28px 0;
+      letter-spacing: -0.01em;
+    }
+    .quote-sub {
+      font-family: var(--sans);
+      font-style: italic;
+      color: var(--tan);
+      font-size: 14px;
+      margin-bottom: 16px;
+      opacity: 0.85;
+    }
+    .ig-link {
+      font-family: var(--sans);
+      color: var(--greenl);
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      display: inline-block;
+      transition: opacity 0.2s;
+    }
+    .ig-link:hover { opacity: 0.75; }
+ 
+    /* ── WAITLIST ── */
+    .waitlist {
+      background: var(--bg1);
+      padding: 130px 40px;
+    }
+    .waitlist-inner {
+      max-width: 520px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    .wait-label {
+      font-family: var(--sans);
+      font-size: 10px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--tan);
+      margin-bottom: 20px;
+      display: block;
+    }
+    h2 {
+      font-family: var(--serif);
+      font-size: clamp(36px, 5vw, 52px);
+      font-weight: 600;
+      line-height: 1.12;
+      color: var(--black);
+      margin-bottom: 16px;
+      letter-spacing: -0.02em;
+    }
+    .wait-sub {
+      font-family: var(--sans);
+      font-size: 16px;
+      color: var(--grey);
+      margin-bottom: 44px;
+      font-style: italic;
+    }
+    .form-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .form-row input {
+      flex: 1;
+      padding: 17px 20px;
+      background: white;
+      border: 1px solid #D1C9BD;
+      border-radius: 4px;
+      font-family: var(--sans);
+      font-size: 15px;
+      color: var(--black);
+      outline: none;
+      min-width: 0;
+      transition: border-color 0.2s;
+    }
+    .form-row input:focus { border-color: var(--green); }
+    .btn-notify {
+      padding: 17px 28px;
+      background: var(--green);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .btn-notify:hover { background: #245F27; }
+    .btn-notify:disabled { background: #558B57; cursor: not-allowed; }
+    .err { font-family: var(--sans); font-size: 12px; color: var(--red); margin-bottom: 8px; }
+    .no-spam { font-family: var(--sans); font-size: 12px; font-style: italic; color: var(--grey2); }
+    .success {
+      padding: 20px 28px;
+      background: rgba(46,125,50,0.08);
+      border: 1px solid rgba(46,125,50,0.2);
+      border-radius: 4px;
+      font-family: var(--sans);
+      color: var(--green);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .success span { font-size: 13px; opacity: 0.75; }
+ 
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg1);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      padding: 32px 40px;
+      text-align: center;
+    }
+    footer p {
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--grey2);
+      letter-spacing: 0.04em;
+    }
+ 
+    /* ── REVEAL ANIMATIONS ── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.85s ease, transform 0.85s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+    .reveal.d1 { transition-delay: 0.1s; }
+    .reveal.d2 { transition-delay: 0.2s; }
+    .reveal.d3 { transition-delay: 0.3s; }
+    .reveal.d4 { transition-delay: 0.15s; }
+    .reveal.d5 { transition-delay: 0.28s; }
+ 
+    /* ── MOBILE ── */
+    @media (max-width: 640px) {
+      nav { padding: 16px 20px; }
+      .hero { padding: 80px 24px 100px; }
+      .stats { padding: 70px 24px; }
+      .stats-grid { grid-template-columns: 1fr; gap: 48px; }
+      .stat:not(:last-child) { border-right: none; border-bottom: 1px solid rgba(200,191,168,0.12); padding-bottom: 48px; }
+      .story { padding: 80px 24px; }
+      .quote-sec { padding: 70px 24px 80px; }
+      .waitlist { padding: 80px 24px; }
+      .form-row { flex-direction: column; }
+      .btn-notify { width: 100%; padding: 17px; }
+      footer { padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+ 
+  <!-- NAV -->
+  <nav>
+    <div class="nav-brand">
+      <svg width="26" height="16" viewBox="0 0 52 32" fill="none">
+        <path d="M2 16C2 16 12 2 26 2C40 2 50 16 50 16C50 16 40 30 26 30C12 30 2 16 2 16Z"
+          stroke="#DC2626" stroke-width="3" fill="none"/>
+        <circle cx="26" cy="16" r="7" fill="#DC2626"/>
+        <circle cx="26" cy="16" r="3" fill="white"/>
+      </svg>
+      <span>The Match Code</span>
+    </div>
+    <a href="YOUR_PDF_LINK" target="_blank" class="nav-btn">Free Playbook</a>
+  </nav>
+ 
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <span class="label reveal">The Dating Profile Match Playbook</span>
+      <h1 class="reveal d1">The profile is<br>the easy part.</h1>
+      <p class="subtext reveal d2">Same guy. Same city. One week. Everything changed.</p>
+      <div class="cta-wrap reveal d3">
+        <a href="YOUR_PDF_LINK" target="_blank" class="btn-main">Get the Free Playbook</a>
+        <p class="no-catch">No email needed. No catch. Just take it.</p>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- STATS -->
+  <section class="stats">
+    <div class="stats-grid">
+      <div class="stat reveal">
+        <div class="stat-num">250+</div>
+        <div class="stat-label">matches in one week</div>
+      </div>
+      <div class="stat reveal d1">
+        <div class="stat-num">7</div>
+        <div class="stat-label">days to rebuild everything</div>
+      </div>
+      <div class="stat reveal d2">
+        <div class="stat-num">0→9</div>
+        <div class="stat-label">on every metric that matters</div>
+      </div>
+    </div>
+    <p class="stats-note reveal d3">Not luck. Not looks. Just one thing rebuilt.</p>
+  </section>
+ 
+  <!-- STORY -->
+  <section class="story">
+    <div class="story-inner">
+      <h2 class="story-heading reveal">Here is what actually happened.</h2>
+      <p class="reveal d1">
+        She was from NIFT. Design student. The kind of girl who makes you realise you are
+        invisible before she has even looked at you properly. I had zero dress sense, a crew
+        cut, and genuinely no idea what I was doing. She was polite the whole evening and
+        looked through me the entire time. Not mean. Just absent. Like I was not quite there.
+      </p>
+      <p class="reveal d2">
+        Drove home. Opened Hinge. Zero matches. Same screen I had left three days ago.
+        That night something clicked. The problem was not who I was. It was who I looked
+        like I was. Those are two completely different problems. One of them has a very fast fix.
+      </p>
+      <p class="reveal d3">
+        Seven days later — 250+ matches. Same face. Same city. Same phone. The profile
+        got them to stop scrolling. What happened after that is a different story.
+        This playbook is the part that gets you there.
+      </p>
+    </div>
+  </section>
+ 
+  <!-- DARK QUOTE -->
+  <section class="quote-sec">
+    <div class="quote-inner">
+      <blockquote class="reveal">
+        "She was from NIFT. I did not stand a chance. Then one thing shifted."
+      </blockquote>
+      <p class="quote-sub reveal d1">This is only the beginning of the story.</p>
+      <a
+        href="https://instagram.com/thematchcode"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="ig-link reveal d2"
+      >
+        Follow the story on Instagram →
+      </a>
+    </div>
+  </section>
+ 
+  <!-- WAITLIST -->
+  <section class="waitlist" id="mc-wait">
+    <div class="waitlist-inner">
+      <span class="wait-label reveal">The free playbook is just the start</span>
+      <h2 class="reveal d1">Something bigger<br>is coming.</h2>
+      <p class="wait-sub reveal d2">Be the first to know.</p>
+ 
+      <div id="form-wrap" class="reveal d3">
+        <div class="form-row">
+          <input type="email" id="email-input" placeholder="your@email.com" />
+          <button class="btn-notify" id="notify-btn" onclick="submitEmail()">Notify Me</button>
         </div>
-    )
-}
+        <p class="err" id="err-msg" style="display:none"></p>
+        <p class="no-spam">No spam. Ever.</p>
+      </div>
+ 
+      <div id="success-msg" class="success" style="display:none">
+        You are on the list.<br>
+        <span>We will reach out before anyone else.</span>
+      </div>
+    </div>
+  </section>
+ 
+  <!-- FOOTER -->
+  <footer>
+    <p>© The Match Code</p>
+  </footer>
+ 
+  <script>
+    // ── Replace these with your actual values ──────────────────────────────
+    const SUPABASE_URL      = "https://YOUR_PROJECT.supabase.co"
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY"
+    // ───────────────────────────────────────────────────────────────────────
+ 
+    // Reveal on scroll
+    const reveals = document.querySelectorAll('.reveal')
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible')
+          obs.unobserve(e.target)
+        }
+      })
+    }, { threshold: 0.1 })
+    reveals.forEach(el => obs.observe(el))
+ 
+    // Email submit
+    async function submitEmail() {
+      const input = document.getElementById('email-input')
+      const btn   = document.getElementById('notify-btn')
+      const err   = document.getElementById('err-msg')
+      const form  = document.getElementById('form-wrap')
+      const succ  = document.getElementById('success-msg')
+      const email = input.value.trim()
+ 
+      if (!email || !email.includes('@')) {
+        err.textContent = 'Enter a valid email.'
+        err.style.display = 'block'
+        return
+      }
+ 
+      btn.disabled    = true
+      btn.textContent = '...'
+      err.style.display = 'none'
+ 
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/waitlist`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            'Prefer': 'return=minimal'
+          },
+          body: JSON.stringify({
+            email: email,
+            created_at: new Date().toISOString()
+          })
+        })
+ 
+        if (res.ok || res.status === 201) {
+          form.style.display = 'none'
+          succ.style.display = 'block'
+        } else {
+          throw new Error('failed')
+        }
+      } catch {
+        err.textContent = 'Something went wrong. Try again.'
+        err.style.display = 'block'
+        btn.disabled    = false
+        btn.textContent = 'Notify Me'
+      }
+    }
+  </script>
+ 
+</body>
+</html>
